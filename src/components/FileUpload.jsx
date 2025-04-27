@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { jsPDF } from 'jspdf'; // <-- New import
+import { jsPDF } from 'jspdf';
 
 const FileUpload = () => {
   const [file, setFile] = useState(null);
@@ -8,9 +8,11 @@ const FileUpload = () => {
   const [publications, setPublications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false); // New state for success message
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
+    setSuccess(false); // Reset success message when choosing a new file
   };
 
   const handleUpload = async () => {
@@ -25,11 +27,17 @@ const FileUpload = () => {
     try {
       setLoading(true);
       setError(null);
+      setSuccess(false);
 
-      const res = await axios.post('http://https://publication-summary-generator.onrender.com/api/upload', formData);
+      const res = await axios.post('https://publication-summary-generator.onrender.com/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
       setSummary(res.data.summary);
       setPublications(res.data.publications);
+      setSuccess(true); // Set success after successful upload
     } catch (err) {
       console.error(err);
       setError('Error uploading file. Please try again.');
@@ -38,7 +46,6 @@ const FileUpload = () => {
     }
   };
 
-  // -------- Download Summary as PDF --------
   const handleDownloadSummary = () => {
     if (!summary) return;
 
@@ -53,37 +60,37 @@ const FileUpload = () => {
     doc.text(`Conference Papers: ${summary.conferenceCount}`, 20, 60);
     doc.text(`Year Range: ${summary.yearRange}`, 20, 70);
 
-    doc.save('publication_summary.pdf'); // save as PDF file
+    doc.save('publication_summary.pdf');
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: 'auto' }}>
+    <div className='upload-container'>
       <h2>Upload BibTeX File</h2>
       <input type="file" onChange={handleFileChange} accept=".bib" />
-      <button onClick={handleUpload} style={{ marginLeft: '10px' }}>
+      <button onClick={handleUpload} className='upload-button'>
         Upload
       </button>
 
       {loading && <p>Uploading and processing file... ⏳</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
+      {success && <p style={{ color: 'green' }}>File uploaded and processed successfully! ✅</p>}
 
       {summary && (
-        <div style={{ marginTop: '20px', border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
+        <div className='summary-box'>
           <h3>Publication Summary:</h3>
           <p><strong>Total Publications:</strong> {summary.totalPublications}</p>
           <p><strong>Journal Papers:</strong> {summary.journalCount}</p>
           <p><strong>Conference Papers:</strong> {summary.conferenceCount}</p>
           <p><strong>Year Range:</strong> {summary.yearRange}</p>
 
-          {/* Download Summary Button */}
-          <button onClick={handleDownloadSummary} style={{ marginTop: '15px' }}>
+          <button onClick={handleDownloadSummary} className='download-button'>
             Download Summary (PDF)
           </button>
         </div>
       )}
 
       {publications.length > 0 && (
-        <div style={{ marginTop: '20px' }}>
+        <div className='publication-list'>
           <h3>Publication Details:</h3>
           <ul>
             {publications.map((pub, index) => (
